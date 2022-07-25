@@ -20,7 +20,7 @@ np.random.seed(42)
 # the speed of center of mass from the speed of every atom to calculate the temperature
 
 
-def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, averaging_part=0.8, diffusion_step=1, device='CPU', rho_coef=2):
+def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, averaging_part=0.8, writing_step=1, device='CPU'):
     '''
 
     main cycle, all the movements and calculations will happen here
@@ -37,7 +37,7 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
     kins = np.array([])
     pots = np.array([])
     #---
-    coord_writer, force_writer = create_coords_and_forces_writer(coords_path='coords3.csv', forces_path='forces3.csv')
+    coord_writer, force_writer = create_coords_and_forces_writer(coords_path='coords.csv', forces_path='forces.csv')
     steps_of_averaging = int(averaging_part * TIME_STEPS)
     #---
     for ts in range(TIME_STEPS):
@@ -67,7 +67,7 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
         T_current = (2 / 3) * (total_kin) / N
 
         # Starting things for a set conditions:
-        if ts >= TIME_STEPS - steps_of_averaging:
+        if (ts >= TIME_STEPS - steps_of_averaging) and (ts % writing_step == 0):
 
             write_coords_and_forces(particles=particles, time=ts * dt, coord_writer=coord_writer, force_writer=force_writer)
 
@@ -80,4 +80,4 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
 
 # ---------------------------------------- #
 if __name__ == '__main__':
-    main_cycle(spawn_on_grid=True, sigma_for_vel=1.5, bins_num=170, averaging_part=0.95, diffusion_step=50)
+    main_cycle(spawn_on_grid=True, sigma_for_vel=1.5, bins_num=170, averaging_part=0.95, writing_step=10)
