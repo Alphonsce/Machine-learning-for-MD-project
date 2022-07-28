@@ -11,7 +11,12 @@ class Particle:
     '''
     class, which will represent a moving particle
     '''
+    number = 0
+
     def __init__(self, pos, vel, acc):
+        self.number = Particle.number
+        Particle.number += 1
+
         self.pos = pos
         self.vel = vel
         self.acc = acc
@@ -20,9 +25,10 @@ class Particle:
         self.kin_energy = 0     # 0.5 * M * norm(vel) ** 2
         self.pot_energy = 0
 
-    def move(self):
+    def move(self, boundary_conditions_teleportation=True):
         self.pos += self.vel * dt + 0.5 * self.acc * (dt ** 2)
-        check_boundary(self)
+        if boundary_conditions_teleportation:
+            check_boundary(self)
 
     def diffusion_move(self, ):
         self.diffusion_pos += self.vel * dt + 0.5 * self.acc * (dt ** 2)
@@ -84,12 +90,15 @@ def sgn(x):
         return -1
     return 0
 
-def calculate_acceleration(part1, part2):
-    r = part1.pos - part2.pos       # r_1 - r_2
+def calculate_acceleration(part1, part2, boundary_conditions=True):
+    r1 = part1.pos
+    r2 = part2.pos
+    r = r1 - r2
     # Boundary condition realisation:
-    for i in range(3):
-        if abs(r[i]) > L / 2:
-            r[i] = r[i] - L * sgn(r[i])
+    if boundary_conditions:
+        for i in range(3):
+            if abs(r[i]) > L / 2:   # Если расстояние между двумя частицами больше L/2, то мы точно найдем в соседних клетках ближе
+                r[i] = r[i] - L * sgn(r[i])
             
     dist = norm(r)
     if dist < r_cut:
@@ -98,6 +107,8 @@ def calculate_acceleration(part1, part2):
         # potential of two particle interaction, we need to add it to the total pot of one: Both have a half of the total
         part1.pot_energy += -4 * (pow(dist, -6) - pow(dist, -12))
         part2.pot_energy += 0
+
+    # То что снизу направлено будет именно на запись в файл силы:
 
 def check_boundary(particle):
     '''

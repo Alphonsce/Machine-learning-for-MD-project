@@ -1,2 +1,6 @@
 test.*
 *.xyz
+
+coords.csv
+
+forces.csv
