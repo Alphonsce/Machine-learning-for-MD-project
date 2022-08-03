@@ -1,6 +1,6 @@
 test.*
 *.xyz
 
-coords.csv
 
-forces.csv
+# Чтобы слишком большие не запушить
+*.csv

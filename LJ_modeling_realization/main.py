@@ -20,7 +20,9 @@ np.random.seed(42)
 # the speed of center of mass from the speed of every atom to calculate the temperature
 
 
-def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, averaging_part=0.8, writing_step=1, device='CPU', boundary_conditions=True, boundary_conditions_teleportation=True, velocity_scaler=None):
+def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, averaging_part=0.8, writing_step=1, device='CPU',
+    coords_path='coords.csv', forces_path='forces.csv',
+    boundary_conditions=True, boundary_conditions_teleportation=True, velocity_scaler=None):
     '''
 
     main cycle, all the movements and calculations will happen here
@@ -43,7 +45,7 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
     kins = np.array([])
     pots = np.array([])
     #---
-    coord_writer, force_writer = create_coords_and_forces_writer(coords_path='coords.csv', forces_path='forces.csv')
+    coord_writer, force_writer = create_coords_and_forces_writer(coords_path=coords_path, forces_path=forces_path)
     steps_of_averaging = int(averaging_part * TIME_STEPS)
     #---
     for ts in range(TIME_STEPS):
@@ -95,7 +97,10 @@ if __name__ == '__main__':
 
         boundary_conditions=False,  # False, если хотим просто силы записывать
         boundary_conditions_teleportation=True,     # Если скейлер ставить и здесь True, то никто очень сильно не разгонится
-        velocity_scaler=2.0
+        velocity_scaler=1.0,
+
+        coords_path='coords50.csv',
+        forces_path='forces50.csv'
         )
 
         # False, True, 0.5 - типичная настройка для записи сил
