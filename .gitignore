@@ -1,4 +1,9 @@
 test.*
+test_of_1dim_extractor.ipynb
+test_of_2dim_extractor.ipynb
+
+elevators.mat
+
 *.xyz
 
 
