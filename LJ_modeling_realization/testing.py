@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import sys
-sys.path.append('./python_realization/includes')
+sys.path.append('./LJ_modeling_realization/includes')
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import iqr
@@ -13,4 +13,8 @@ import csv
 from includes.constants import *
 from includes.calculations import N_grid
 
-print(N / L ** 3)
+line = "123.csv"
+
+print(
+    line.split('.')[0]
+)

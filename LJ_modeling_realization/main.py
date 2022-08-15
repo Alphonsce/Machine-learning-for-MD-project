@@ -1,4 +1,5 @@
 import sys
+from tkinter import EXCEPTION
 sys.path.append('./LJ_modeling_realization/includes')
 import numpy as np
 import matplotlib.pyplot as plt
@@ -37,6 +38,9 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
     velocity_scaler: указываем температуру к которой скейлить
     
     '''
+    if str(N) not in coords_path.split('.')[0] or str(N) not in forces_path.split('.')[0]:
+        raise Exception('Writing into the wrong file (amount of particles)')
+
     particles = initialize_system(on_grid=spawn_on_grid, sigma_for_velocity=sigma_for_vel, device=device)
     total_pot = 0
     total_kin = 0
@@ -93,14 +97,14 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
 # ---------------------------------------- #
 if __name__ == '__main__':
     main_cycle(
-        spawn_on_grid=True, sigma_for_vel=1.5, bins_num=170, averaging_part=0.95, writing_step=10,
+        spawn_on_grid=True, sigma_for_vel=1.5, bins_num=170, averaging_part=0.95, writing_step=20,
 
         boundary_conditions=False,  # False, если хотим просто силы записывать
         boundary_conditions_teleportation=True,     # Если скейлер ставить и здесь True, то никто очень сильно не разгонится
-        velocity_scaler=1.0,
+        velocity_scaler=0.5,
 
-        coords_path='coords3.csv',
-        forces_path='forces3.csv'
+        coords_path='coords2.csv',
+        forces_path='forces2.csv'
         )
 
         # False, True, 0.5 - типичная настройка для записи сил
