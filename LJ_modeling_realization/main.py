@@ -97,14 +97,14 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
 # ---------------------------------------- #
 if __name__ == '__main__':
     main_cycle(
-        spawn_on_grid=True, sigma_for_vel=1.5, bins_num=170, averaging_part=0.95, writing_step=20,
+        spawn_on_grid=True, sigma_for_vel=1.0, bins_num=170, averaging_part=0.95, writing_step=20,
 
         boundary_conditions=False,  # False, если хотим просто силы записывать
         boundary_conditions_teleportation=True,     # Если скейлер ставить и здесь True, то никто очень сильно не разгонится
         velocity_scaler=0.5,
 
-        coords_path='coords2.csv',
-        forces_path='forces2.csv'
+        coords_path='coords3.csv',
+        forces_path='forces3.csv'
         )
 
         # False, True, 0.5 - типичная настройка для записи сил
