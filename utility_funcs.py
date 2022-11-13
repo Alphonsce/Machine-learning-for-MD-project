@@ -33,10 +33,10 @@ def recieve_loaders(take_one_projection_for_data=None, path=None, cut_size=None,
     even_for_train - брать в качестве трейна четные, в качестве теста нечетные
     '''
     if path:
-        N = int(path.split('_')[0])
-        K = int(path.split('_')[-1].split('.')[0])
+        N = int(path.split("/")[-1].split('_')[0])     # число атомов
+        K = int(path.split("/")[-1].split('_')[-1].split('.')[0])     # можно называть это разрешением...чем число больше, тем больше размеры матрицы для атомов, фактически это число элементов в наборах p и r_cut
 
-        dataset = torch.load(str(N) + '_dataset_K_' + str(K) + '.pt')
+        dataset = torch.load("./dataset_objects/" + str(N) + '_dataset_K_' + str(K) + '.pt')
         dataset = [(elem[0], elem[1], elem[2], elem[3]) for elem in dataset]
 
         if take_one_projection_for_data is not None:
