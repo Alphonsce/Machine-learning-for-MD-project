@@ -8,12 +8,20 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 
-def create_dataloaders(train_dataset, val_dataset, train_bs=64, val_bs=64, fold=None):
+MODE = "forces"
+# MODE = "movements"
+# MODE = "velocities"
+
+naming_of_target_in_csv = {
+    "forces": ["f_x", "f_y", "f_z"],
+    "movements": ["s_x", "s_y", "s_z"],
+    "velocities": ["v_x", "v_y", "v_z"]
+}
+
+def create_dataloaders(train_dataset, val_dataset, train_bs=64, val_bs=64):
     '''
 
     Returns train_loader, val_loader
-
-    fold: will be used in cross validation, when I will implement it
 
     '''
     
@@ -23,7 +31,7 @@ def create_dataloaders(train_dataset, val_dataset, train_bs=64, val_bs=64, fold=
 
     return train_loader, val_loader
 
-def recieve_loaders(take_one_projection_for_data=None, path=None, cut_size=None, even_for_train=False):
+def recieve_loaders(batch_size=64, take_one_projection_for_data=None, path=None, cut_size=None, even_for_train=False):
     '''
     returns: (dataet, train_loader, val_loader), if u pass path -> returns loader from tensor dataset from
 
@@ -36,7 +44,7 @@ def recieve_loaders(take_one_projection_for_data=None, path=None, cut_size=None,
         N = int(path.split("/")[-1].split('_')[0])     # число атомов
         K = int(path.split("/")[-1].split('_')[-1].split('.')[0])     # можно называть это разрешением...чем число больше, тем больше размеры матрицы для атомов, фактически это число элементов в наборах p и r_cut
 
-        dataset = torch.load("./dataset_objects/" + str(N) + '_dataset_K_' + str(K) + '.pt')
+        dataset = torch.load("./dataset_objects/" + MODE + '/' + str(N) + '_dataset_K_' + str(K) + '.pt')
         dataset = [(elem[0], elem[1], elem[2], elem[3]) for elem in dataset]
 
         if take_one_projection_for_data is not None:
@@ -52,7 +60,7 @@ def recieve_loaders(take_one_projection_for_data=None, path=None, cut_size=None,
         if cut_size:
             train_data = train_data[:cut_size]
             val_data = val_data[:cut_size]
-        train_dataloader, val_dataloader = create_dataloaders(train_data, val_data)
+        train_dataloader, val_dataloader = create_dataloaders(train_data, val_data, train_bs=batch_size, val_bs=batch_size)
         return train_data, val_data, train_dataloader, val_dataloader
     
     X = []
