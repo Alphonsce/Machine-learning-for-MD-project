@@ -51,10 +51,8 @@ def recieve_loaders(batch_size=64, take_one_projection_for_data=None, path=None,
             dataset = [(elem[0], elem[1][take_one_projection_for_data].unsqueeze(dim=0), elem[2], elem[3]) for elem in dataset]
 
         if even_for_train:
-            evens = [i for i in range(len(dataset)) if i % 2 == 0]
-            odds = [i for i in range(len(dataset)) if i % 2 != 0]
-            train_data = dataset[evens]
-            val_data = dataset[odds]
+            train_data = [dataset[i] for i in range(len(dataset)) if i % 2 == 0]
+            val_data = [dataset[i] for i in range(len(dataset)) if i % 2 != 0]
         else:
             train_data, val_data = train_test_split(dataset, test_size=0.33, random_state=42)
         if cut_size:
