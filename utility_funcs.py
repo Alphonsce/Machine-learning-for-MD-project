@@ -93,7 +93,7 @@ def plot_2d_result(x, y_pred, y_true, figsize=(12, 7)):
     plt.figure(figsize=figsize)
     
     plt.xlabel('Элемент матрицы X', fontsize=20)
-    plt.ylabel('Компонента силы', fontsize=20)
+    plt.ylabel(f'Компонента {MODE[:-1]}', fontsize=20)
 
     plt.scatter(x, y_pred, label='Предсказанная зависимость')
     plt.scatter(x, y_true, label='Истинная зависимость')
