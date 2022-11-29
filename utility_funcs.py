@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 
-MODE = "forces"
-# MODE = "movements"
+# MODE = "forces"
+MODE = "movements"
 # MODE = "velocities"
 
 naming_of_target_in_csv = {
@@ -88,7 +88,7 @@ def recieve_loaders(batch_size=64, take_one_projection_for_data=None, path=None,
 
 def plot_2d_result(x, y_pred, y_true, figsize=(12, 7)):
     '''
-    
+    x - is array of a_ii elements of matrix
     '''
     plt.figure(figsize=figsize)
     
@@ -100,3 +100,13 @@ def plot_2d_result(x, y_pred, y_true, figsize=(12, 7)):
     plt.legend(loc='best', fontsize=20)
 
     plt.show()
+
+def plot_matrix(X, Y_pred, Y_true):
+    '''
+    Function which plots matrix of dependencies: f_i(X_jj)
+    '''
+    k = len(Y_pred[0])
+    fig, axes = plt.subplots(k, k)
+    for i in range(k):
+        for j in range(k):
+            print(axes)
