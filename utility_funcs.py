@@ -1,5 +1,6 @@
 import torch
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import Normalizer, MinMaxScaler
 import os
 import numpy as np
 import random
@@ -18,6 +19,18 @@ naming_of_target_in_csv = {
     "velocities": ["v_x", "v_y", "v_z"]
 }
 
+class Descaler:
+    '''
+    Returns variable to the same scale
+    '''
+    def __init__(self, max, min):
+        self.max = max
+        self.min = min
+
+    def __call__(self, y):
+        return y * (self.max - self.min) + self.min
+
+
 def create_dataloaders(train_dataset, val_dataset, train_bs=64, val_bs=64):
     '''
 
@@ -31,9 +44,9 @@ def create_dataloaders(train_dataset, val_dataset, train_bs=64, val_bs=64):
 
     return train_loader, val_loader
 
-def recieve_loaders(batch_size=64, take_one_projection_for_data=None, path=None, cut_size=None, even_for_train=False):
+def recieve_loaders(batch_size=64, take_one_projection_for_data=None, path=None, cut_size=None, even_for_train=False, scale_y=False, normalize_X=False, test_size=0.33):
     '''
-    returns: (dataet, train_loader, val_loader), if u pass path -> returns loader from tensor dataset from
+    returns: (train_data, val_data, train_dataloader, val_dataloader, descaler)
 
     может создать датасет у которого всего одна проекция взята за таргет из уже существующего датасета или по пути на файл:
     take_one_projection_for_data - указываем в этом параметре номер координатной проекции (нумерация от 0)
@@ -45,7 +58,23 @@ def recieve_loaders(batch_size=64, take_one_projection_for_data=None, path=None,
         K = int(path.split("/")[-1].split('_')[-1].split('.')[0])     # можно называть это разрешением...чем число больше, тем больше размеры матрицы для атомов, фактически это число элементов в наборах p и r_cut
 
         dataset = torch.load("./dataset_objects/" + MODE + '/' + str(N) + '_dataset_K_' + str(K) + '.pt')
-        dataset = [(elem[0], elem[1], elem[2], elem[3]) for elem in dataset]
+        X = torch.vstack([elem[0] for elem in dataset])
+        y = torch.vstack([elem[1] for elem in dataset])
+
+        if normalize_X:
+            normer = Normalizer()
+            X = normer.fit_transform(X)
+            normer = Normalizer()
+            X = torch.tensor(normer.fit_transform(X))
+
+        descaler = Descaler(1, 0)
+        if scale_y:
+            scaler = MinMaxScaler()
+            y = scaler.fit_transform(y)
+            y = torch.tensor(y, dtype=torch.float)
+            descaler = Descaler(scaler.data_max_, scaler.data_min_)
+
+        dataset = [(X[i], y[i], elem[2], elem[3]) for i, elem in enumerate(dataset)]
 
         if take_one_projection_for_data is not None:
             dataset = [(elem[0], elem[1][take_one_projection_for_data].unsqueeze(dim=0), elem[2], elem[3]) for elem in dataset]
@@ -59,34 +88,10 @@ def recieve_loaders(batch_size=64, take_one_projection_for_data=None, path=None,
             train_data = train_data[:cut_size]
             val_data = val_data[:cut_size]
         train_dataloader, val_dataloader = create_dataloaders(train_data, val_data, train_bs=batch_size, val_bs=batch_size)
-        return train_data, val_data, train_dataloader, val_dataloader
-    
-    X = []
-    Y = []
 
-    for _ in range(500):
-        # X = (torch.rand(1)).squeeze().unsqueeze(dim=0)
-        x = (torch.rand(K))
-        y = function(x)
-        X.append(x)
-        Y.append(y)
+        return train_data, val_data, train_dataloader, val_dataloader, descaler
 
-    X_train, X_val, Y_train, Y_val = train_test_split(X, Y, random_state=42, train_size=0.8)
-
-    X_train = torch.stack(X_train)
-    X_val = torch.stack(X_val)
-    Y_train = torch.stack(Y_train)
-    Y_val = torch.stack(Y_val)
-
-    train_data = TensorDataset(X_train, Y_train)
-    val_data = TensorDataset(X_val, Y_val)
-
-    train_dataloader = DataLoader(train_data, batch_size=128)
-    val_dataloader = DataLoader(val_data, batch_size=128)
-
-    return train_data, val_data, train_dataloader, val_dataloader
-
-def plot_2d_result(x, y_pred, y_true, figsize=(12, 7)):
+def plot_2d_result(x, y_true=None, y_pred=None, figsize=(12, 7)):
     '''
     x - is array of a_ii elements of matrix
     '''
@@ -95,18 +100,32 @@ def plot_2d_result(x, y_pred, y_true, figsize=(12, 7)):
     plt.xlabel('Элемент матрицы X', fontsize=20)
     plt.ylabel(f'Компонента {MODE[:-1]}', fontsize=20)
 
-    plt.scatter(x, y_pred, label='Предсказанная зависимость')
+    if y_pred is not None:
+        plt.scatter(x, y_pred, label='Предсказанная зависимость')
     plt.scatter(x, y_true, label='Истинная зависимость')
     plt.legend(loc='best', fontsize=20)
 
     plt.show()
 
-def plot_matrix(X, Y_pred, Y_true):
+def plot_matrix(X, Y_true, K, Y_pred=None, Y_verlet=None, figsize=(15, 15)):
     '''
     Function which plots matrix of dependencies: f_i(X_jj)
     '''
     k = len(Y_pred[0])
-    fig, axes = plt.subplots(k, k)
-    for i in range(k):
+    fig, axes = plt.subplots(k, k, figsize=figsize)
+
+    for i in range(k):  # цикл по компонентам силы
+        y_true = [elem[i] for elem in Y_true]
+        if Y_pred is not None:
+            y_pred = [elem[i] for elem in Y_pred]
+        if Y_verlet is not None:
+            y_verlet = [elem[i] for elem in Y_true] if Y_verlet else None
         for j in range(k):
-            print(axes)
+            x = [elem.reshape(K, K)[j][j] for elem in X]
+            axes[i][j].set_title(f'$f_{i}(X_{str(j)})$')
+            axes[i][j].scatter(x, y_true, label="True", s=10)
+            if Y_pred is not None:
+                axes[i][j].scatter(x, y_pred, label="Predicted", s=10)
+            if Y_verlet is not None:
+                axes[i][j].scatter(x, y_verlet, label="True", s=10)
+            axes[i][j].legend(loc="best")
