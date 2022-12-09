@@ -176,10 +176,10 @@ def write_diffusion(writer: csv.DictWriter, particles, time):
         writing_dict[str(i) + 'z'] = pos[2]
     writer.writerow(writing_dict)
 
-def create_coords_and_forces_writer(coords_path = 'coords.csv', forces_path = 'forces.csv'):
+def create_coords_and_forces_writer(coords_path = 'coords.csv', forces_path = 'forces.csv', vel_path="velocities.csv"):
     '''
 
-    returns: (coord_writer, force_writer)
+    returns: (coord_writer, force_writer, vel_writer)
 
     '''
     fieldnames = []
@@ -201,10 +201,20 @@ def create_coords_and_forces_writer(coords_path = 'coords.csv', forces_path = 'f
     f = open(forces_path, 'w+')
     force_writer = csv.DictWriter(f, fieldnames=fieldnames)
     force_writer.writeheader()
+    #
+    fieldnames = []
+    fieldnames.append('t')
+    for i in range(N):
+        fieldnames.append(str(i) + 'v_x')
+        fieldnames.append(str(i) + 'v_y')
+        fieldnames.append(str(i) + 'v_z')
+    f = open(vel_path, 'w+')
+    vel_writer = csv.DictWriter(f, fieldnames=fieldnames)
+    vel_writer.writeheader()
 
-    return coord_writer, force_writer
+    return coord_writer, force_writer, vel_writer
 
-def write_coords_and_forces(particles, time, coord_writer, force_writer):
+def write_coords_and_forces(particles, time, coord_writer, force_writer, vel_writer):
     writing_dict = {}
     writing_dict['t'] = round(time, 6)
     for i in range(N):
@@ -222,6 +232,15 @@ def write_coords_and_forces(particles, time, coord_writer, force_writer):
         writing_dict[str(i) + 'f_y'] = acc[1]
         writing_dict[str(i) + 'f_z'] = acc[2]
     force_writer.writerow(writing_dict)
+
+    writing_dict = {}
+    writing_dict['t'] = round(time, 6)
+    for i in range(N):
+        vel = particles[i].vel
+        writing_dict[str(i) + 'v_x'] = vel[0]
+        writing_dict[str(i) + 'v_y'] = vel[1]
+        writing_dict[str(i) + 'v_z'] = vel[2]
+    vel_writer.writerow(writing_dict)
 
 # короче надо сделать просто csv, где в каждый момент времени мы записиваем для всех частиц их координаты, а оттуда уже
 # можно будет достать все что нужно.

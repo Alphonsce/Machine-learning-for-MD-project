@@ -5,8 +5,8 @@ SIGMA = 1
 EPSILON = 1
 M = 1
 
-TIME_STEPS = 1000000
-N = 3
+TIME_STEPS = 3000
+N = 2
 L = 2 * N ** (1 / 3)
 # the distance of cut for the LJ potential
 r_cut = 10

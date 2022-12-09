@@ -1,6 +1,6 @@
 import sys
 from tkinter import EXCEPTION
-sys.path.append('./LJ_modeling_realization/includes')
+sys.path.append('./includes')
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -22,7 +22,7 @@ np.random.seed(42)
 
 
 def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, averaging_part=0.8, writing_step=1, device='CPU',
-    coords_path='coords.csv', forces_path='forces.csv',
+    coords_path='coords.csv', forces_path='forces.csv', vel_path='velocities.csv',
     boundary_conditions=True, boundary_conditions_teleportation=True, velocity_scaler=None):
     '''
 
@@ -49,7 +49,7 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
     kins = np.array([])
     pots = np.array([])
     #---
-    coord_writer, force_writer = create_coords_and_forces_writer(coords_path=coords_path, forces_path=forces_path)
+    coord_writer, force_writer, vel_writer = create_coords_and_forces_writer(coords_path=coords_path, forces_path=forces_path, vel_path=vel_path)
     steps_of_averaging = int(averaging_part * TIME_STEPS)
     #---
     for ts in range(TIME_STEPS):
@@ -85,7 +85,7 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
         # Starting things for a set conditions:
         if (ts >= TIME_STEPS - steps_of_averaging) and (ts % writing_step == 0):
 
-            write_coords_and_forces(particles=particles, time=ts * dt, coord_writer=coord_writer, force_writer=force_writer)
+            write_coords_and_forces(particles=particles, time=ts * dt, coord_writer=coord_writer, force_writer=force_writer, vel_writer=vel_writer)
 
         #--------
         if int((0.01 * verbose * TIME_STEPS)) != 0:
@@ -97,14 +97,17 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
 # ---------------------------------------- #
 if __name__ == '__main__':
     main_cycle(
-        spawn_on_grid=True, sigma_for_vel=1.0, bins_num=170, averaging_part=0.95, writing_step=20,
+        spawn_on_grid=True, sigma_for_vel=1.0, bins_num=170, averaging_part=0.95,
+        
+        writing_step=1,
 
         boundary_conditions=False,  # False, если хотим просто силы записывать
-        boundary_conditions_teleportation=True,     # Если скейлер ставить и здесь True, то никто очень сильно не разгонится
-        velocity_scaler=0.5,
+        boundary_conditions_teleportation=False,     # Если скейлер ставить и здесь True, то никто очень сильно не разгонится
+        # velocity_scaler=0.5,
 
-        coords_path='coords3.csv',
-        forces_path='forces3.csv'
+        coords_path='coords2.csv',
+        forces_path='forces2.csv',
+        vel_path="velocities2.csv"
         )
 
         # False, True, 0.5 - типичная настройка для записи сил

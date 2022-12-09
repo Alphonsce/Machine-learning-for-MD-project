@@ -11,3 +11,5 @@ elevators.mat
 *.csv
 *.force
 *.velocity
+
+/lammps/lmp_serial
