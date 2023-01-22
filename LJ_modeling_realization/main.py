@@ -105,9 +105,9 @@ if __name__ == '__main__':
         boundary_conditions_teleportation=False,     # Если скейлер ставить и здесь True, то никто очень сильно не разгонится
         # velocity_scaler=0.5,
 
-        coords_path='coords2.csv',
-        forces_path='forces2.csv',
-        vel_path="velocities2.csv"
+        coords_path='coords3.csv',
+        forces_path='forces3.csv',
+        vel_path="velocities3.csv"
         )
 
         # False, True, 0.5 - типичная настройка для записи сил

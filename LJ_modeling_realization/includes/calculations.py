@@ -79,8 +79,13 @@ def force(r):
     '''
     r is a vector from one particle to another
     '''
+
     d = norm(r)
+
     f = 4 * (12 * pow(d, -13) - 6 * pow(d, -7)) * (r / d)
+
+    # f = -10 * r
+
     return f
 
 def sgn(x):

@@ -13,3 +13,5 @@ elevators.mat
 *.velocity
 
 /lammps/lmp_serial
+
+catboost_info

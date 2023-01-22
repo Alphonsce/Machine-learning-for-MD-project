@@ -111,7 +111,7 @@ def plot_matrix(X, Y_true, K, Y_pred=None, Y_verlet=None, figsize=(15, 15)):
     '''
     Function which plots matrix of dependencies: f_i(X_jj)
     '''
-    k = len(Y_pred[0])
+    k = len(Y_true[0])
     fig, axes = plt.subplots(k, k, figsize=figsize)
 
     for i in range(k):  # цикл по компонентам силы
@@ -121,7 +121,7 @@ def plot_matrix(X, Y_true, K, Y_pred=None, Y_verlet=None, figsize=(15, 15)):
         if Y_verlet is not None:
             y_verlet = [elem[i] for elem in Y_true] if Y_verlet else None
         for j in range(k):
-            x = [elem.reshape(K, K)[j][j] for elem in X]
+            x = [elem.reshape(k, K)[j][j] for elem in X]
             axes[i][j].set_title(f'$f_{i}(X_{str(j)})$')
             axes[i][j].scatter(x, y_true, label="True", s=10)
             if Y_pred is not None:
