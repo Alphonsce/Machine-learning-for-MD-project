@@ -57,7 +57,7 @@ def recieve_loaders(batch_size=64, take_one_projection_for_data=None, path=None,
         N = int(path.split("/")[-1].split('_')[0])     # число атомов
         K = int(path.split("/")[-1].split('_')[-1].split('.')[0])     # можно называть это разрешением...чем число больше, тем больше размеры матрицы для атомов, фактически это число элементов в наборах p и r_cut
 
-        dataset = torch.load("./dataset_objects/" + MODE + '/' + str(N) + '_dataset_K_' + str(K) + '.pt')
+        dataset = torch.load(path)
         X = torch.vstack([elem[0] for elem in dataset])
         y = torch.vstack([elem[1] for elem in dataset])
 
