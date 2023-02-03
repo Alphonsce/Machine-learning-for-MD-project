@@ -13,6 +13,38 @@ from torch.utils.data import TensorDataset
 MODE = "movements"
 # MODE = "velocities"
 
+path = './dataset_objects/' + MODE + '/3_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path_vel = './dataset_objects/' + "d_velocities" + '/3_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+
+class CFG:
+    '''
+
+    All hyperparameters are here
+
+    '''
+
+    N = int(path.split("/")[-1].split('_')[0])     # число атомов
+    K = int(path.split("/")[-1].split('_')[-1].split('.')[0])     # можно называть это разрешением...чем число больше, тем больше размеры матрицы для атомов, фактически это число элементов в наборах p и r_cut
+
+    L = 2 * N ** (1 / 3) # размер одной клетки при моделировании
+
+    r_cut = np.random.uniform(low=5, high=10, size=K).copy()
+    p = np.random.uniform(low=1, high=3, size=K).copy()
+    N_neig= N - 1 if N != 2 else 1
+
+    # train_bs = 8
+    # val_bs = 16
+    batch_size = 1024
+
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = "cpu"
+
+    f_threshold = 5    # Если сила по какой-то координате превышает это значение, то строчка исключается, совсем маленьких по модулю сил быть не должно, если что при генерации просто r_cut поменьше надо делать
+    coord_threshold = L     # Если вдруг очень большие расстояния, то надо выкидывать
+    f_min_threshold = 0.05
+    #
+    output_size = K     # Размерность аутпута модели
+
 naming_of_target_in_csv = {
     "forces": ["f_x", "f_y", "f_z"],
     "movements": ["s_x", "s_y", "s_z"],
@@ -29,6 +61,9 @@ class Descaler:
 
     def __call__(self, y):
         return y * (self.max - self.min) + self.min
+
+    def scale(self, y):
+        return (y - self.min) / (self.max - self.min)
 
 
 def create_dataloaders(train_dataset, val_dataset, train_bs=64, val_bs=64):
@@ -58,6 +93,7 @@ def recieve_loaders(batch_size=64, take_one_projection_for_data=None, path=None,
         K = int(path.split("/")[-1].split('_')[-1].split('.')[0])     # можно называть это разрешением...чем число больше, тем больше размеры матрицы для атомов, фактически это число элементов в наборах p и r_cut
 
         dataset = torch.load(path)
+
         X = torch.vstack([elem[0] for elem in dataset])
         y = torch.vstack([elem[1] for elem in dataset])
 
