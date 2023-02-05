@@ -13,8 +13,8 @@ from torch.utils.data import TensorDataset
 MODE = "movements"
 # MODE = "velocities"
 
-path = './dataset_objects/' + MODE + '/3_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
-path_vel = './dataset_objects/' + "d_velocities" + '/3_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path = './dataset_objects/' + MODE + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path_vel = './dataset_objects/' + "d_velocities" + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
 
 class CFG:
     '''
