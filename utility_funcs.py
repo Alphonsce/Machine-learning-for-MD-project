@@ -13,8 +13,8 @@ from torch.utils.data import TensorDataset
 MODE = "movements"
 # MODE = "velocities"
 
-path = './dataset_objects/' + MODE + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
-path_vel = './dataset_objects/' + "d_velocities" + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path = f'./dataset_objects/' + MODE + '/3_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path_vel = f'./dataset_objects/' + "d_velocities" + '/3_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
 
 class CFG:
     '''
@@ -165,3 +165,31 @@ def plot_matrix(X, Y_true, K, Y_pred=None, Y_verlet=None, figsize=(15, 15)):
             if Y_verlet is not None:
                 axes[i][j].scatter(x, y_verlet, label="True", s=10)
             axes[i][j].legend(loc="best")
+
+
+def make_one_vec_transformed(vec, vec_norm, r_cut_i, p_i):
+    '''
+    vec: np.array - normalized vector
+    norm: its norm
+    r_cut_i: i-th component of
+    '''
+    
+    # return vec_norm * vec
+
+    # return 4 * (12 * pow(vec_norm, -13) - 6 * pow(vec_norm, -7)) * (vec)    # явный вид Леннард-Джонса
+    
+    # return vec / vec_norm
+
+    return vec * np.exp(
+        -np.power((vec_norm / r_cut_i), p_i)
+        )
+    
+    # return vec * (
+    #     -np.power((vec_norm / r_cut_i), p_i)        # Если вектора V_i близкие, то псевдообратная считается немного нестабильно
+    #     )
+
+    # return (pow(vec_norm, -r_cut_i) - pow(vec_norm, -p_i)) * (vec)    # Леннард-Джонс но степени - параметры
+
+    # Если мы хотим обучаться  на скоростях и на радиус-векторах, то можно взять - расстояние, на которое 
+
+make_matrix_transformed = np.vectorize(make_one_vec_transformed)
