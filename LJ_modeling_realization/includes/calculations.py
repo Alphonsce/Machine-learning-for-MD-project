@@ -40,6 +40,8 @@ def N_grid(n):
 def initialize_system(on_grid=False, sigma_for_velocity=0.5, device='CPU'):
     '''
     initializes coordinates and velocities of particles
+
+    sigma_for_velocity - if passed will generate random velocities in normal dist with mu=0
     '''
     particles = []
     for i in range(N):
@@ -56,8 +58,11 @@ def initialize_system(on_grid=False, sigma_for_velocity=0.5, device='CPU'):
             z = i // n_grid ** 2
             y = i // n_grid - n_grid * z
             pos = d * np.array([x, y, z]) + rnd_vec
-            # for k in range(3):
-                # vel[k] = random.normalvariate(0, sigma_for_velocity)
+
+            if sigma_for_velocity:
+                for k in range(3):
+                    vel[k] = random.normalvariate(0, sigma_for_velocity)
+                    
         elif not on_grid:
             for k in range(3):
                 pos[k] = np.random.uniform(0, L)

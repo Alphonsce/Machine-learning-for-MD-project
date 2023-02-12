@@ -24,3 +24,5 @@ def integration_step():
 
 def integration_cycle(starting_coords, starting_vels):
     pass
+
+print(123)

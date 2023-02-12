@@ -8,13 +8,14 @@ import matplotlib.pyplot as plt
 
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
+from torch import nn
 
 # MODE = "forces"
 MODE = "movements"
 # MODE = "velocities"
 
-path = f'./dataset_objects/' + MODE + '/3_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
-path_vel = f'./dataset_objects/' + "d_velocities" + '/3_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path = f'./dataset_objects/' + MODE + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path_vel = f'./dataset_objects/' + "d_velocities" + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
 
 class CFG:
     '''
@@ -193,3 +194,74 @@ def make_one_vec_transformed(vec, vec_norm, r_cut_i, p_i):
     # Если мы хотим обучаться  на скоростях и на радиус-векторах, то можно взять - расстояние, на которое 
 
 make_matrix_transformed = np.vectorize(make_one_vec_transformed)
+
+
+# -------------------
+class SingleNet(nn.Module):
+    '''
+
+    Класс одиночной нейронной сети
+
+    '''
+    def __init__(self, output_size, activation=nn.ReLU(), flattened_size=CFG.K * CFG.K):
+        '''
+        
+        FC_type: тип полносвязных слоев: 'regular' / 'simple
+
+        convolution: сверточная часть сети
+
+        '''
+        super().__init__()
+
+        self.FC = nn.Sequential(
+        #     # nn.BatchNorm1d(flattened_size),
+
+            nn.Linear(flattened_size, 128),
+            activation,
+            # nn.Dropout(0.3),
+            nn.BatchNorm1d(128),
+
+            nn.Linear(128, 256),
+            activation,
+            # nn.Dropout(0.3),
+            nn.BatchNorm1d(256),
+
+            nn.Linear(256, 256),
+            activation,
+            # nn.Dropout(0.3),
+            nn.BatchNorm1d(256),
+
+            nn.Linear(256, 256),
+            activation,
+            # nn.Dropout(0.3),
+            nn.BatchNorm1d(256),
+
+            # nn.Linear(256, 256),
+            # activation,
+            # # nn.Dropout(0.3),
+            # nn.BatchNorm1d(256),
+            
+            nn.Linear(256, 512),
+            activation,
+            # nn.Dropout(0.3),
+            # nn.BatchNorm1d(512),
+            nn.Linear(512, output_size),
+        )
+
+        # self.FC = nn.Sequential(
+        #     nn.Linear(flattened_size, 64),
+        #     activation,
+
+        #     nn.Linear(64, output_size)
+        # )
+
+        # self.FC = nn.Linear(flattened_size, output_size)
+
+    def forward(self, x):
+        # x - is batch of matrices KxK
+
+        # Здесь происходят какие-то там свертки, пуллинги и тп..
+
+        x = self.FC(x)
+
+        return x

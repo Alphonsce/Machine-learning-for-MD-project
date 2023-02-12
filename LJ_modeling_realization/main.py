@@ -88,26 +88,26 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
             write_coords_and_forces(particles=particles, time=ts * dt, coord_writer=coord_writer, force_writer=force_writer, vel_writer=vel_writer)
 
         #--------
-        if int((0.01 * verbose * TIME_STEPS)) != 0:
-            if ts % int((0.01 * verbose * TIME_STEPS)) == 0:
-                print(f'{ts} steps passed, T_current = {T_current}')
-        else:
-            print(f'{ts} steps passed, T_current = {T_current}')
+        if int((0.01 * TIME_STEPS)) % verbose == 0:
+            print(f'{ts} steps passed, Temp_current = {T_current}, K={total_kin}, U={total_pot}, E = {total_kin + total_pot}')
 
 # ---------------------------------------- #
 if __name__ == '__main__':
     main_cycle(
-        spawn_on_grid=True, sigma_for_vel=1.0, bins_num=170, averaging_part=0.95,
+        spawn_on_grid=True, sigma_for_vel=1.0, bins_num=170, 
+        
+        averaging_part=0.95,
         
         writing_step=1,
 
-        boundary_conditions=False,  # False, если хотим просто силы записывать
-        boundary_conditions_teleportation=False,     # Если скейлер ставить и здесь True, то никто очень сильно не разгонится
+        # boundary_conditions=False,  # False, если хотим просто силы записывать
+        # boundary_conditions_teleportation=False,     # Если скейлер ставить и здесь True, то никто очень сильно не разгонится
         # velocity_scaler=0.5,
 
-        coords_path='coords3.csv',
-        forces_path='forces3.csv',
-        vel_path="velocities3.csv"
+        coords_path=f'coords{N}.csv',
+        forces_path=f'forces{N}.csv',
+        vel_path=f'velocities{N}.csv',
+        verbose=1
         )
 
         # False, True, 0.5 - типичная настройка для записи сил
