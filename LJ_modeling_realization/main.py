@@ -88,17 +88,21 @@ def main_cycle(spawn_on_grid=True, sigma_for_vel=0.5, verbose=1, bins_num=50, av
             write_coords_and_forces(particles=particles, time=ts * dt, coord_writer=coord_writer, force_writer=force_writer, vel_writer=vel_writer)
 
         #--------
-        if int((0.01 * TIME_STEPS)) % verbose == 0:
+        if int(TIME_STEPS * 0.01) % verbose == 0:
             print(f'{ts} steps passed, Temp_current = {T_current}, K={total_kin}, U={total_pot}, E = {total_kin + total_pot}')
 
 # ---------------------------------------- #
 if __name__ == '__main__':
     main_cycle(
-        spawn_on_grid=True, sigma_for_vel=1.0, bins_num=170, 
+        spawn_on_grid=True, 
+        
+        # sigma_for_vel=1.0,
+        
+        bins_num=170, 
         
         averaging_part=0.95,
         
-        writing_step=1,
+        writing_step=50,
 
         # boundary_conditions=False,  # False, если хотим просто силы записывать
         # boundary_conditions_teleportation=False,     # Если скейлер ставить и здесь True, то никто очень сильно не разгонится
@@ -117,3 +121,6 @@ if __name__ == '__main__':
 # поэтому все что нам остается - отключить периодические условия, поскольку иначе в одной конфигурации мы можем определить силы только для одной частицы
 
 # Но их можно отключить хитро: поскольку нас волнует только зависимость F(\vec {r}), то можно оставить телепортацию частиц при выходе из клетки, но отключить выбор частиц из других клеток при расчете сил
+
+# 2 со скоростями 0
+# 

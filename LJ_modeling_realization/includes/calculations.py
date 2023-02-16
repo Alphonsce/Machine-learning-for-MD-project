@@ -22,6 +22,9 @@ class Particle:
         self.acc = acc
         self.diffusion_pos = np.zeros(3)
 
+        # Times Crossed The Boarder: (can also be negative if went to the other side)
+        self.image = np.zeros(3, dtype=int)
+
         self.kin_energy = 0     # 0.5 * M * norm(vel) ** 2
         self.pot_energy = 0
 
@@ -37,7 +40,7 @@ def N_grid(n):
     '''Size of the grid in amount of particles for one side'''
     return ceil(pow(n, 1 / 3))
 
-def initialize_system(on_grid=False, sigma_for_velocity=0.5, device='CPU'):
+def initialize_system(on_grid=True, sigma_for_velocity=False, device='CPU'):
     '''
     initializes coordinates and velocities of particles
 
@@ -62,7 +65,7 @@ def initialize_system(on_grid=False, sigma_for_velocity=0.5, device='CPU'):
             if sigma_for_velocity:
                 for k in range(3):
                     vel[k] = random.normalvariate(0, sigma_for_velocity)
-                    
+
         elif not on_grid:
             for k in range(3):
                 pos[k] = np.random.uniform(0, L)
@@ -78,6 +81,8 @@ def initialize_system(on_grid=False, sigma_for_velocity=0.5, device='CPU'):
         for j in range(i + 1, N):
             calculate_acceleration(particles[i], particles[j])
 
+    if N == 1:
+        particles[0].vel = 5
     return particles
 
 def force(r):
@@ -126,8 +131,10 @@ def check_boundary(particle):
     '''
     for i in range(3):
         if particle.pos[i] > L:
+            particle.image[i] += 1
             particle.pos[i] -=  L
         elif particle.pos[i] < 0:
+            particle.image[i] -= 1
             particle.pos[i] += L
 
 def achieve_velocities(particles):

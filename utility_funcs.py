@@ -181,15 +181,15 @@ def make_one_vec_transformed(vec, vec_norm, r_cut_i, p_i):
     
     # return vec / vec_norm
 
-    return vec * np.exp(
-        -np.power((vec_norm / r_cut_i), p_i)
-        )
+    # return vec * np.exp(
+    #     -np.power((vec_norm / r_cut_i), p_i)
+    #     )
     
     # return vec * (
     #     -np.power((vec_norm / r_cut_i), p_i)        # Если вектора V_i близкие, то псевдообратная считается немного нестабильно
     #     )
 
-    # return (pow(vec_norm, -r_cut_i) - pow(vec_norm, -p_i)) * (vec)    # Леннард-Джонс но степени - параметры
+    return (pow(vec_norm, -r_cut_i) - pow(vec_norm, -p_i)) * (vec)    # Леннард-Джонс но степени - параметры
 
     # Если мы хотим обучаться  на скоростях и на радиус-векторах, то можно взять - расстояние, на которое 
 

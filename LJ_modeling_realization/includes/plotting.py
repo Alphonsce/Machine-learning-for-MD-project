@@ -219,9 +219,12 @@ def write_coords_and_forces(particles, time, coord_writer, force_writer, vel_wri
     writing_dict['t'] = round(time, 6)
     for i in range(N):
         pos = particles[i].pos
-        writing_dict[str(i) + 'x'] = pos[0]
-        writing_dict[str(i) + 'y'] = pos[1]
-        writing_dict[str(i) + 'z'] = pos[2]
+        image = particles[i].image
+        # image = 0
+        abs_pos = pos + image * L
+        writing_dict[str(i) + 'x'] = abs_pos[0]
+        writing_dict[str(i) + 'y'] = abs_pos[1]
+        writing_dict[str(i) + 'z'] = abs_pos[2]
     coord_writer.writerow(writing_dict)
 
     writing_dict = {}
