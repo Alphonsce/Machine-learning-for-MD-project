@@ -31,8 +31,7 @@ struct Particle {
 
 struct SystemOptions {
     unsigned particles_number = 216;
-    double density = 0.5;
-    double box_size;
+    double box_size = 2. * cbrt(particles_number);
     double T0 = 1.0;
     unsigned seed = time(NULL);
     double cutoff_radius = 1.0e6;
@@ -41,11 +40,18 @@ struct SystemOptions {
     double dt = 0.001;
     unsigned steps_number = 100;
     unsigned print_thermo_frequency = 100;
-    unsigned print_out_frequency = 100;
-    bool write_output_in_one_file = false;
+    unsigned print_out_frequency = steps_number;    // Здесь пока делаем так для удобства
+    unsigned output_precision = 10;
+
+    double density = particles_number / (box_size * box_size * box_size);
+    //
+    bool write_output_in_one_file = true;
+    //
     string init_config_file = "";
     bool use_energy_correction = false;
-    bool print_unfolded_coordinates = false;
+    //
+    bool print_unfolded_coordinates = true;
+    //
     bool read_and_print_with_velocity = true;
 };
 
@@ -69,6 +75,7 @@ void PrintUsageInfo() {
     cout << "\t -uf                Print unfolded coordinates in output files" << endl;
     cout << "\t -novelo            Not print and not read velocity from files" << endl;
     cout << "\t -h                 Print this info" << endl;
+    cout << "\t -op                Output to file precision" << endl;
 }
 
 SystemOptions ParseCommandLineArguments(int argc, char** argv) {
@@ -147,6 +154,7 @@ void WriteParticlesXYZ(ofstream& out_file, const vector<Particle>& particles,
         out_file << " Properties=pos:R:3";
     }
     out_file << " Time = " << time << endl;
+    out_file.precision(options.output_precision);
     for (const auto& particle : particles) {
         if (options.print_unfolded_coordinates) {
             out_file << particle.x + particle.image_x * options.box_size << " "
@@ -325,6 +333,8 @@ void ApplyPeriodicBoundaryConditions(vector<Particle>& particles, const SystemOp
 }
 
 int main(int argc, char* argv[]) {
+    cout.precision(8);
+
     SystemOptions options = ParseCommandLineArguments(argc, argv);
     options.box_size = cbrt(options.particles_number / options.density);
     double rr3 = 1 / (options.cutoff_radius * options.cutoff_radius * options.cutoff_radius);
@@ -364,7 +374,7 @@ int main(int argc, char* argv[]) {
     // Initial output to file
     ofstream out_file;
     if (options.write_output_in_one_file) {
-        out_file.open("out.xyz");
+        out_file.open("N" + to_string(options.particles_number) + ".xyz");
         WriteParticlesXYZ(out_file, particles, options, 0.0);
     }
     else {
@@ -437,4 +447,5 @@ int main(int argc, char* argv[]) {
     if (options.write_output_in_one_file) {
         out_file.close();
     }
+    cout << options.box_size << endl;
 }

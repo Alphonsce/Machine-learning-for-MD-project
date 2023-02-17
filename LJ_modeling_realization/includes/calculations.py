@@ -127,7 +127,7 @@ def calculate_acceleration(part1, part2, boundary_conditions=True):
 
 def check_boundary(particle):
     '''
-    checks boundary conditions
+    checks boundary conditions: teleports particle
     '''
     for i in range(3):
         if particle.pos[i] > L:

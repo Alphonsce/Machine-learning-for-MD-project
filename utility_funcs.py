@@ -3,12 +3,21 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import Normalizer, MinMaxScaler
 import os
 import numpy as np
+import pandas as pd
+from numpy.linalg import norm
 import random
 import matplotlib.pyplot as plt
+
+from numba import njit
+from collections import defaultdict
+
+from tqdm import tqdm
 
 from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 from torch import nn
+
+from LJ_modeling_realization.includes.constants import N, L
 
 # MODE = "forces"
 MODE = "movements"
@@ -27,7 +36,7 @@ class CFG:
     N = int(path.split("/")[-1].split('_')[0])     # число атомов
     K = int(path.split("/")[-1].split('_')[-1].split('.')[0])     # можно называть это разрешением...чем число больше, тем больше размеры матрицы для атомов, фактически это число элементов в наборах p и r_cut
 
-    L = 2 * N ** (1 / 3) # размер одной клетки при моделировании
+    L = (2 * N) ** (1 / 3) # размер одной клетки при моделировании
 
     r_cut = np.random.uniform(low=5, high=10, size=K).copy()
     p = np.random.uniform(low=1, high=3, size=K).copy()
@@ -181,15 +190,15 @@ def make_one_vec_transformed(vec, vec_norm, r_cut_i, p_i):
     
     # return vec / vec_norm
 
-    # return vec * np.exp(
-    #     -np.power((vec_norm / r_cut_i), p_i)
-    #     )
+    return vec * np.exp(
+        -np.power((vec_norm / r_cut_i), p_i)
+    )
     
     # return vec * (
     #     -np.power((vec_norm / r_cut_i), p_i)        # Если вектора V_i близкие, то псевдообратная считается немного нестабильно
     #     )
 
-    return (pow(vec_norm, -r_cut_i) - pow(vec_norm, -p_i)) * (vec)    # Леннард-Джонс но степени - параметры
+    # return (pow(vec_norm, -r_cut_i) - pow(vec_norm, -p_i)) * (vec)    # Леннард-Джонс но степени - параметры
 
     # Если мы хотим обучаться  на скоростях и на радиус-векторах, то можно взять - расстояние, на которое 
 
@@ -265,3 +274,246 @@ class SingleNet(nn.Module):
         x = self.FC(x)
 
         return x
+
+def create_movements_csv(N, step=1, coords_path_to_get_movements_from=None, convert_to_csv=True, create_d_velocity=False, path_to_get_velocities_from=None):
+    '''
+    N - number of particles in coordsN.csv file that will be used to calculate movements
+    step - step for parsing rows of dataframe
+
+    coords_path_to_get_movements_from if not passed, will be ./coords_and_forces/coords" + str(N)
+
+    convert_to_csv: True by default, if False - will return dataframe object
+
+    create_d_velocity: this function is also used to create d_velocities, if True - will create d_velocitiesN.csv
+
+    path_to_get_velocities_from: default path for velocities, to sync rows we need to select rows with a step and drop last one and then save
+    '''
+    if coords_path_to_get_movements_from is None:
+        coord_rows = pd.read_csv("./coords_and_forces/coords" + str(N) + ".csv")[::step]
+    else:
+        coord_rows = pd.read_csv(coords_path_to_get_movements_from)[::step]
+    coord_rows[:-1].to_csv("./coords_and_movements/coords" + str(N) + ".csv", index=False)
+
+    if path_to_get_velocities_from is None:
+        vel_rows = pd.read_csv("./coords_and_forces/velocities" + str(N) + ".csv")[::step]
+    else:
+        vel_rows = pd.read_csv(path_to_get_velocities_from)[::step]
+    vel_rows[:-1].to_csv("./coords_and_movements/velocities" + str(N) + ".csv", index=False)
+
+    movements = defaultdict(list)
+
+    naming = ["t"]
+    for i in range(N):
+        naming.extend([str(i) + "s_x", str(i) + "s_y", str(i) + "s_z"])
+    
+    for row_numb in range(len(coord_rows) - 1):
+        cur_coords = coord_rows.iloc[row_numb].to_numpy()
+        next_coords = coord_rows.iloc[row_numb + 1].to_numpy()
+        delta = (next_coords - cur_coords)
+        for i in range(len(naming)):
+            movements[naming[i]].append(delta[i])
+
+
+    if create_d_velocity:
+        d_velocities = defaultdict(list)
+
+        naming = ["t"]
+        for i in range(N):
+            naming.extend([str(i) + "dv_x", str(i) + "dv_y", str(i) + "dv_z"])
+        
+        for row_numb in range(len(vel_rows) - 1):
+            cur_coords = vel_rows.iloc[row_numb].to_numpy()
+            next_coords = vel_rows.iloc[row_numb + 1].to_numpy()
+            delta = (next_coords - cur_coords)
+            for i in range(len(naming)):
+                d_velocities[naming[i]].append(delta[i])    
+
+        d_velocities = pd.DataFrame(d_velocities)
+        d_velocities.to_csv("./coords_and_movements/d_velocities" + str(N) + ".csv", index=False)
+    
+    movements = pd.DataFrame(movements)
+    if convert_to_csv:
+        movements.to_csv("./coords_and_movements/movements" + str(N) + ".csv", index=False)
+    else:
+        return movements
+
+def print_normed(V: np.array) -> None:
+    print(
+        V / norm(V, axis=-1)[:, np.newaxis]
+    )
+
+@njit
+def _force(r):
+    '''
+    r is a vector from one particle to another
+    '''
+    d = norm(r)
+    f = 4 * (12 * pow(d, -13) - 6 * pow(d, -7)) * (r / d)
+    return f
+
+calc_forces = np.vectorize(_force)
+
+def get_rel_dists(row, atom_number, N):
+    '''
+    This function processes one row of csv into something that we can work with
+
+    Returns np.array matrix that consists of relative positions vectors for passed atom_number to every other atom
+    and then we can chose only closest N_neighbours in the next functions
+    
+    row: df.iloc[row] - typeof(row): pd.Series
+    
+    returns: Rel_matrix, f_vec
+    '''
+
+
+    s_coord = pd.Series(dtype=float)
+    other_atom_numbers = [i for i in range(N) if i != atom_number]
+
+    for other_numb in other_atom_numbers:
+        index = str(atom_number) + str(other_numb)
+        for axis in ['x', 'y', 'z']:
+            s_coord[index + axis] = row[str(atom_number) + axis] - row[str(other_numb) + axis]
+
+    Rel_matrix = []
+    cur_vector = []
+
+    for (i, elem) in enumerate(s_coord.values):
+        if i % 3 == 0 and i != 0:
+            Rel_matrix.append(cur_vector)
+            cur_vector = []
+
+        cur_vector.append(elem)
+    Rel_matrix.append(cur_vector)
+
+    # print('rel_dists: ', Rel_matrix)
+
+    return np.array(Rel_matrix)
+
+# Короче надо как-то научиться создавать список, в котором каждые N * step шагов будут выкинуты N подряд идущих чисел - это сразу решит проблему обрезания по частицам и шага по состояниям
+
+def generate_useful_indexes(N, step, length):
+    '''
+    Дает список из индексов для номеров строчек, которые надо использовать при большем цикле считывания
+    '''
+    sp = []
+    for i in range(0, length, step * N):
+        for j in range(0, N):
+            sp.append(i + j)
+    return sp
+
+def get_rows_for_use_particles(old_N, new_N, length):
+    '''
+    Дает список из индексов для номеров строчек, которые надо использовать при уменьшении числа частиц
+    '''
+    sp = []
+    for i in range(0, length, old_N):
+        for j in range(0, new_N):
+            sp.append(i + j)
+    return sp
+
+
+# NUMPY VERSION:
+
+def create_csv_from_force(write_folder, read_path, recalculate_forces=False, normalize_forces=False, use_particles=None, step=1, lines_read_coef=None, velocity_regime=None):
+    '''
+    создает .csv формат из .force
+    по-сути делает цсв-хи с которыми я работаю из LAMMPS-овского аутпута
+
+    use_particles - количество частиц, которое использовать, то есть сколько из записанных координат использовать (это нормально реализовать супер геморрой)
+    recalculate_forces - пересчитать силы
+    normalize_forces - нормализовать силы
+
+    step - шаг на количество позиций при чтении (оно в текущей версии очень долго работает с этим параметром)
+    lines_read_coef - N * lines_read_coef строчек с координатами считывается - то есть lines_read_coed - количество конфигураций, которое считывается
+    '''
+    # через решейп к (lines_read, 3) - удаляем с шагом строчки: x = np.delete(x, np.arange(0, x.size, use_particles))
+
+    if use_particles and not velocity_regime:
+        recalculate_forces = True
+        print("use_particles is not None - forces will be recalculated anyway")
+    with open(read_path, 'r+') as f:
+        for i in range(3):
+            f.readline()
+
+        N = int(str(f.readline()).strip())
+
+    actual_steps = generate_useful_indexes(N, step, length=int(5e5))
+
+    with open(read_path, 'r+') as read_f:
+        all_forces = []
+        all_coords = []
+        lines_read = 0  # строчки с координатами прочитанные
+        for line in (read_f):
+            if line[0] == 'C':
+                # if lines_read in actual_steps:
+                    # if lines_read % (N * step) == 0:    # делаем шаг
+                    arr = list(map(lambda x: float(x.strip()), line.split(' ')[1:]))
+                    arr_coords = (arr[:3])
+                    if not recalculate_forces:
+                        arr_forces = (arr[3:])
+                        all_forces.extend(arr_forces)
+                    all_coords.extend(arr_coords)
+                    lines_read += 1
+
+            if lines_read_coef and lines_read >= lines_read_coef * N:
+                break
+    all_coords = np.reshape(all_coords, (lines_read // N, 3 * N))
+    if not recalculate_forces:
+        all_forces = np.reshape(all_forces, (lines_read // N, 3 * N))
+
+    if use_particles is not None and use_particles < N:
+        # Силы здесь не надо откидывать - если use_particles - их надо пересчитывать
+        coords_single_vecs = np.reshape(all_coords, (lines_read, 3))
+        length = len(coords_single_vecs)
+
+        new_rows_idxs = get_rows_for_use_particles(old_N=N, new_N=use_particles, length=length)
+        coords_single_vecs = coords_single_vecs[new_rows_idxs]
+
+        new_lines_read = len(coords_single_vecs)
+        all_coords = np.reshape(coords_single_vecs, (new_lines_read // use_particles, 3 * use_particles))
+        N = use_particles
+        lines_read = new_lines_read
+        CFG.N = use_particles
+
+    # CFG.N = N
+    coords_path = write_folder + '/coords' + str(N) + '.csv'
+    forces_path = write_folder + '/forces' + str(N) + '.csv'
+    if velocity_regime:
+        forces_path = write_folder + '/velocities' + str(N) + '.csv'
+
+    fieldnames_forces = []
+    fieldnames_coords = []
+    for i in range(N):
+        fieldnames_coords.extend([str(i) + 'x', str(i) + 'y', str(i) + 'z'])
+        if not velocity_regime:
+            fieldnames_forces.extend([str(i) + "f_x", str(i) + "f_y", str(i) + "f_z"])
+        else:
+            fieldnames_forces.extend([str(i) + "v_x", str(i) + "v_y", str(i) + "v_z"])
+
+    if not velocity_regime:
+        df_coords = pd.DataFrame(all_coords,
+                    index=np.arange(len(all_coords)),
+                    columns=fieldnames_coords)
+        df_coords.index.name = 't'
+        df_coords.to_csv(coords_path)
+
+    if recalculate_forces and not velocity_regime:
+        all_forces = []
+        for index in tqdm(range(len(df_coords)), desc='Progress for rows: Forces recalculation:'):
+            for atom_number in range(N):
+                Rel_dists_mat = get_rel_dists(df_coords.loc[index], atom_number, N=N)
+                f = np.sum(np.apply_along_axis(_force, -1, Rel_dists_mat), axis=0)
+                
+                all_forces.append(f)
+
+        all_forces  = np.vstack(all_forces)
+        all_forces = np.reshape(all_forces, (lines_read // N, 3 * N))        
+
+    if MODE == "movements" and velocity_regime:
+        all_forces = all_forces[:-1]    # потому что перемещения для всех строчек кроме последней определяются
+
+    df_forces = pd.DataFrame(all_forces,
+                index=np.arange(len(all_forces)),
+                columns=fieldnames_forces)
+    df_forces.index.name = 't'
+    df_forces.to_csv(forces_path)
