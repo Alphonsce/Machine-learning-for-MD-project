@@ -61,6 +61,7 @@ naming_of_target_in_csv = {
     "velocities": ["v_x", "v_y", "v_z"]
 }
 
+
 class Descaler:
     '''
     Returns variable to the same scale
