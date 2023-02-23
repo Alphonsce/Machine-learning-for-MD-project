@@ -23,8 +23,8 @@ from LJ_modeling_realization.includes.constants import N, L
 MODE = "movements"
 # MODE = "velocities"
 
-path = f'./dataset_objects/' + MODE + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
-path_vel = f'./dataset_objects/' + "d_velocities" + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path = f'./dataset_objects/' + MODE + '/4_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path_vel = f'./dataset_objects/' + "d_velocities" + '/4_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
 
 class CFG:
     '''
@@ -195,13 +195,13 @@ def make_one_vec_transformed(vec, vec_norm, r_cut_i, p_i):
     
     # return vec / vec_norm
 
-    return vec * np.exp(
-        -np.power((vec_norm / r_cut_i), p_i)
-    )
+    # return vec * np.exp(
+    #     -np.power((vec_norm / r_cut_i), p_i)
+    # )
     
-    # return vec * (
-    #     -np.power((vec_norm / r_cut_i), p_i)        # Если вектора V_i близкие, то псевдообратная считается немного нестабильно
-    #     )
+    return vec * (
+        -np.power((vec_norm / r_cut_i), p_i)        # Если вектора V_i близкие, то псевдообратная считается немного нестабильно
+        )
 
     # return (pow(vec_norm, -r_cut_i) - pow(vec_norm, -p_i)) * (vec)    # Леннард-Джонс но степени - параметры
 

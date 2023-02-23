@@ -5,9 +5,9 @@ SIGMA = 1
 EPSILON = 1
 M = 1
 
-TIME_STEPS = 2500
+TIME_STEPS = 10000
 
-N = 2
+N = 4
 
 L = 2 * N ** (1 / 3)
 # L = 0.25
