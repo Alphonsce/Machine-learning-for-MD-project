@@ -71,6 +71,10 @@ class Descaler:
         self.min = min
 
     def __call__(self, y):
+        try:
+            y = y.detach().numpy()
+        except:
+            pass
         return y * (self.max - self.min) + self.min
 
     def scale(self, y):

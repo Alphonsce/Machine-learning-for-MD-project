@@ -74,15 +74,24 @@ def initialize_system(on_grid=True, sigma_for_velocity=False, device='CPU'):
     # calculation of initialized accelerations and
     # subsrtacting speed of center of mass
 
+    # if N == 2:
+#     particles[0].vel = np.array([-0.1, 0, 0])
+#     particles[1].vel = np.array([0.0, 0, 0])
+
     Vc = calculate_com_vel(particles)
     for p in particles:
         p.vel -= Vc
+        print(p.vel)
     for i in range(N):
         for j in range(i + 1, N):
             calculate_acceleration(particles[i], particles[j])
 
+    # particles[0].vel = np.array([-0.1, 0, 0])
+    # particles[1].vel = np.array([0.0, 0, 0])
+
     if N == 1:
         particles[0].vel = 5
+
     return particles
 
 def force(r):
