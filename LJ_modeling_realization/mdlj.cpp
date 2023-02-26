@@ -145,19 +145,22 @@ vector<Particle> ReadParticlesXYZ(ifstream& in_file, SystemOptions& options) {
 void WriteParticlesXYZ(ofstream& out_file, const vector<Particle>& particles, 
                        const SystemOptions& options, double time) {
     out_file << options.particles_number << endl;
-    out_file << "Lattice=\" " << options.box_size << " 0.0 0.0 0.0 "
-        << options.box_size << " 0.0 0.0 0.0 " << options.box_size << " \"";
-    if (options.read_and_print_with_velocity) {
-        out_file << " Properties=pos:R:3:velo:R:3";
-    }
-    else {
-        out_file << " Properties=pos:R:3";
-    }
-    out_file << " Time = " << time << endl;
+    out_file << "\n";
+
+    // out_file << "Lattice=\" " << options.box_size << " 0.0 0.0 0.0 "
+    //     << options.box_size << " 0.0 0.0 0.0 " << options.box_size << " \"";
+    // if (options.read_and_print_with_velocity) {
+    //     out_file << " Properties=pos:R:3:velo:R:3";
+    // }
+    // else {
+    //     out_file << " Properties=pos:R:3";
+    // }
+    // out_file << " Time = " << time << endl;
+
     out_file.precision(options.output_precision);
     for (const auto& particle : particles) {
         if (options.print_unfolded_coordinates) {
-            out_file << particle.x + particle.image_x * options.box_size << " "
+            out_file << "1 " << particle.x + particle.image_x * options.box_size << " "
                 << particle.y + particle.image_y * options.box_size << " "
                 << particle.z + particle.image_z * options.box_size;
         }

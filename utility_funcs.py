@@ -23,8 +23,8 @@ from LJ_modeling_realization.includes.constants import N, L
 MODE = "movements"
 # MODE = "velocities"
 
-path = f'./dataset_objects/' + MODE + '/4_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
-path_vel = f'./dataset_objects/' + "d_velocities" + '/4_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path = f'./dataset_objects/' + MODE + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path_vel = f'./dataset_objects/' + "d_velocities" + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
 
 class CFG:
     '''
@@ -44,7 +44,7 @@ class CFG:
 
     # train_bs = 8
     # val_bs = 16
-    batch_size = 1024
+    batch_size = 128
 
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     device = "cpu"
@@ -280,67 +280,72 @@ class SingleNet(nn.Module):
 
         return x
 
-def create_movements_csv(N, step=1, coords_path_to_get_movements_from=None, convert_to_csv=True, create_d_velocity=False, path_to_get_velocities_from=None):
-    '''
-    N - number of particles in coordsN.csv file that will be used to calculate movements
-    step - step for parsing rows of dataframe
+# def create_movements_csv(N, step=1, coords_path_to_get_movements_from=None, convert_to_csv=True, create_d_velocity=False, path_to_get_velocities_from=None,
+#         dt=None, minus_vdt=False):
+#     '''
+#     N - number of particles in coordsN.csv file that will be used to calculate movements
+#     step - step for parsing rows of dataframe
 
-    coords_path_to_get_movements_from if not passed, will be ./coords_and_forces/coords" + str(N)
+#     coords_path_to_get_movements_from if not passed, will be ./coords_and_forces/coords" + str(N)
 
-    convert_to_csv: True by default, if False - will return dataframe object
+#     convert_to_csv: True by default, if False - will return dataframe object
 
-    create_d_velocity: this function is also used to create d_velocities, if True - will create d_velocitiesN.csv
+#     create_d_velocity: this function is also used to create d_velocities, if True - will create d_velocitiesN.csv
 
-    path_to_get_velocities_from: default path for velocities, to sync rows we need to select rows with a step and drop last one and then save
-    '''
-    if coords_path_to_get_movements_from is None:
-        coord_rows = pd.read_csv("./coords_and_forces/coords" + str(N) + ".csv")[::step]
-    else:
-        coord_rows = pd.read_csv(coords_path_to_get_movements_from)[::step]
-    coord_rows[:-1].to_csv("./coords_and_movements/coords" + str(N) + ".csv", index=False)
+#     path_to_get_velocities_from: default path for velocities, to sync rows we need to select rows with a step and drop last one and then save
+#     '''
+#     if coords_path_to_get_movements_from is None:
+#         coord_rows = pd.read_csv("./coords_and_forces/coords" + str(N) + ".csv")[::step]
+#     else:
+#         coord_rows = pd.read_csv(coords_path_to_get_movements_from)[::step]
+#     coord_rows[:-1].to_csv("./coords_and_movements/coords" + str(N) + ".csv", index=False)
 
-    if path_to_get_velocities_from is None:
-        vel_rows = pd.read_csv("./coords_and_forces/velocities" + str(N) + ".csv")[::step]
-    else:
-        vel_rows = pd.read_csv(path_to_get_velocities_from)[::step]
-    vel_rows[:-1].to_csv("./coords_and_movements/velocities" + str(N) + ".csv", index=False)
+#     if path_to_get_velocities_from is None:
+#         vel_rows = pd.read_csv("./coords_and_forces/velocities" + str(N) + ".csv")[::step]
+#     else:
+#         vel_rows = pd.read_csv(path_to_get_velocities_from)[::step]
+#     vel_rows[:-1].to_csv("./coords_and_movements/velocities" + str(N) + ".csv", index=False)
 
-    movements = defaultdict(list)
+#     movements = defaultdict(list)
 
-    naming = ["t"]
-    for i in range(N):
-        naming.extend([str(i) + "s_x", str(i) + "s_y", str(i) + "s_z"])
+#     naming = ["t"]
+#     for i in range(N):
+#         naming.extend([str(i) + "s_x", str(i) + "s_y", str(i) + "s_z"])
     
-    for row_numb in range(len(coord_rows) - 1):
-        cur_coords = coord_rows.iloc[row_numb].to_numpy()
-        next_coords = coord_rows.iloc[row_numb + 1].to_numpy()
-        delta = (next_coords - cur_coords)
-        for i in range(len(naming)):
-            movements[naming[i]].append(delta[i])
+#     for row_numb in range(len(coord_rows) - 1):
+#         cur_coords = coord_rows.iloc[row_numb].to_numpy()
+#         next_coords = coord_rows.iloc[row_numb + 1].to_numpy()
+#         delta = (next_coords - cur_coords)
+#         # Если вычитать vdt:
+#         if minus_vdt:
+#             cur_vels = vel_rows.iloc[row_numb]
+#             delta -= dt * cur_vels
+#         for i in range(len(naming)):
+#             movements[naming[i]].append(delta[i])
 
 
-    if create_d_velocity:
-        d_velocities = defaultdict(list)
+#     if create_d_velocity:
+#         d_velocities = defaultdict(list)
 
-        naming = ["t"]
-        for i in range(N):
-            naming.extend([str(i) + "dv_x", str(i) + "dv_y", str(i) + "dv_z"])
+#         naming = ["t"]
+#         for i in range(N):
+#             naming.extend([str(i) + "dv_x", str(i) + "dv_y", str(i) + "dv_z"])
         
-        for row_numb in range(len(vel_rows) - 1):
-            cur_coords = vel_rows.iloc[row_numb].to_numpy()
-            next_coords = vel_rows.iloc[row_numb + 1].to_numpy()
-            delta = (next_coords - cur_coords)
-            for i in range(len(naming)):
-                d_velocities[naming[i]].append(delta[i])    
+#         for row_numb in range(len(vel_rows) - 1):
+#             cur_coords = vel_rows.iloc[row_numb].to_numpy()
+#             next_coords = vel_rows.iloc[row_numb + 1].to_numpy()
+#             delta = (next_coords - cur_coords)
+#             for i in range(len(naming)):
+#                 d_velocities[naming[i]].append(delta[i])    
 
-        d_velocities = pd.DataFrame(d_velocities)
-        d_velocities.to_csv("./coords_and_movements/d_velocities" + str(N) + ".csv", index=False)
+#         d_velocities = pd.DataFrame(d_velocities)
+#         d_velocities.to_csv("./coords_and_movements/d_velocities" + str(N) + ".csv", index=False)
     
-    movements = pd.DataFrame(movements)
-    if convert_to_csv:
-        movements.to_csv("./coords_and_movements/movements" + str(N) + ".csv", index=False)
-    else:
-        return movements
+#     movements = pd.DataFrame(movements)
+#     if convert_to_csv:
+#         movements.to_csv("./coords_and_movements/movements" + str(N) + ".csv", index=False)
+#     else:
+#         return movements
 
 def print_normed(V: np.array) -> None:
     print(
