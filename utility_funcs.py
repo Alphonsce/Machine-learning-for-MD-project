@@ -23,8 +23,9 @@ from LJ_modeling_realization.includes.constants import N, L
 MODE = "movements"
 # MODE = "velocities"
 
-path = f'./dataset_objects/' + MODE + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
-path_vel = f'./dataset_objects/' + "d_velocities" + '/2_dataset_K_3.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+    # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+
+minus_vdt = True
 
 class CFG:
     '''
@@ -33,8 +34,8 @@ class CFG:
 
     '''
 
-    N = int(path.split("/")[-1].split('_')[0])     # число атомов
-    K = int(path.split("/")[-1].split('_')[-1].split('.')[0])     # можно называть это разрешением...чем число больше, тем больше размеры матрицы для атомов, фактически это число элементов в наборах p и r_cut
+    N = 50    # число атомов
+    K = 10     # можно называть это разрешением...чем число больше, тем больше размеры матрицы для атомов, фактически это число элементов в наборах p и r_cut
 
     L = (2 * N) ** (1 / 3) # размер одной клетки при моделировании
 
@@ -54,6 +55,9 @@ class CFG:
     f_min_threshold = 0.05
     #
     output_size = K     # Размерность аутпута модели
+
+path = f'./dataset_objects/' + MODE + f'/{CFG.N}_dataset_K_{CFG.K}.pt'        # ЗДЕСЬ БЫЛО МОДЕ ВМЕСТО movements
+path_vel = f'./dataset_objects/' + "d_velocities" + f'/{CFG.N}_dataset_K_{CFG.K}.pt'    
 
 naming_of_target_in_csv = {
     "forces": ["f_x", "f_y", "f_z"],
@@ -103,44 +107,48 @@ def recieve_loaders(batch_size=64, take_one_projection_for_data=None, path=None,
 
     even_for_train - брать в качестве трейна четные, в качестве теста нечетные
     '''
-    if path:
+    try:
         N = int(path.split("/")[-1].split('_')[0])     # число атомов
         K = int(path.split("/")[-1].split('_')[-1].split('.')[0])     # можно называть это разрешением...чем число больше, тем больше размеры матрицы для атомов, фактически это число элементов в наборах p и r_cut
+    
+    except:
+        N = CFG.N
+        K = CFG.K
 
-        dataset = torch.load(path)
+    dataset = torch.load(path)
 
-        X = torch.vstack([elem[0] for elem in dataset])
-        y = torch.vstack([elem[1] for elem in dataset])
+    X = torch.vstack([elem[0] for elem in dataset])
+    y = torch.vstack([elem[1] for elem in dataset])
 
-        if normalize_X:
-            normer = Normalizer()
-            X = normer.fit_transform(X)
-            normer = Normalizer()
-            X = torch.tensor(normer.fit_transform(X))
+    if normalize_X:
+        normer = Normalizer()
+        X = normer.fit_transform(X)
+        normer = Normalizer()
+        X = torch.tensor(normer.fit_transform(X))
 
-        descaler = Descaler(1, 0)
-        if scale_y:
-            scaler = MinMaxScaler()
-            y = scaler.fit_transform(y)
-            y = torch.tensor(y, dtype=torch.float)
-            descaler = Descaler(scaler.data_max_, scaler.data_min_)
+    descaler = Descaler(1, 0)
+    if scale_y:
+        scaler = MinMaxScaler()
+        y = scaler.fit_transform(y)
+        y = torch.tensor(y, dtype=torch.float)
+        descaler = Descaler(scaler.data_max_, scaler.data_min_)
 
-        dataset = [(X[i], y[i], elem[2], elem[3]) for i, elem in enumerate(dataset)]
+    dataset = [(X[i], y[i], elem[2], elem[3]) for i, elem in enumerate(dataset)]
 
-        if take_one_projection_for_data is not None:
-            dataset = [(elem[0], elem[1][take_one_projection_for_data].unsqueeze(dim=0), elem[2], elem[3]) for elem in dataset]
+    if take_one_projection_for_data is not None:
+        dataset = [(elem[0], elem[1][take_one_projection_for_data].unsqueeze(dim=0), elem[2], elem[3]) for elem in dataset]
 
-        if even_for_train:
-            train_data = [dataset[i] for i in range(len(dataset)) if i % 2 == 0]
-            val_data = [dataset[i] for i in range(len(dataset)) if i % 2 != 0]
-        else:
-            train_data, val_data = train_test_split(dataset, test_size=0.33, random_state=42)
-        if cut_size:
-            train_data = train_data[:cut_size]
-            val_data = val_data[:cut_size]
-        train_dataloader, val_dataloader = create_dataloaders(train_data, val_data, train_bs=batch_size, val_bs=batch_size)
+    if even_for_train:
+        train_data = [dataset[i] for i in range(len(dataset)) if i % 2 == 0]
+        val_data = [dataset[i] for i in range(len(dataset)) if i % 2 != 0]
+    else:
+        train_data, val_data = train_test_split(dataset, test_size=0.33, random_state=42)
+    if cut_size:
+        train_data = train_data[:cut_size]
+        val_data = val_data[:cut_size]
+    train_dataloader, val_dataloader = create_dataloaders(train_data, val_data, train_bs=batch_size, val_bs=batch_size)
 
-        return train_data, val_data, train_dataloader, val_dataloader, descaler
+    return train_data, val_data, train_dataloader, val_dataloader, descaler
 
 def plot_2d_result(x, y_true=None, y_pred=None, figsize=(12, 7)):
     '''
@@ -280,72 +288,69 @@ class SingleNet(nn.Module):
 
         return x
 
-# def create_movements_csv(N, step=1, coords_path_to_get_movements_from=None, convert_to_csv=True, create_d_velocity=False, path_to_get_velocities_from=None,
-#         dt=None, minus_vdt=False):
-#     '''
-#     N - number of particles in coordsN.csv file that will be used to calculate movements
-#     step - step for parsing rows of dataframe
+def create_movements_csv(N, coords_path_to_get_movements_from, step=1, convert_to_csv=True, create_d_velocity=False, path_to_get_velocities_from=None,
+        dt=None, minus_vdt=False):
+    '''
+    N - number of particles in coordsN.csv file that will be used to calculate movements
+    step - step for parsing rows of dataframe
 
-#     coords_path_to_get_movements_from if not passed, will be ./coords_and_forces/coords" + str(N)
+    coords_path_to_get_movements_from if not passed, will be ./coords_and_forces/coords" + str(N)
 
-#     convert_to_csv: True by default, if False - will return dataframe object
+    convert_to_csv: True by default, if False - will return dataframe object
 
-#     create_d_velocity: this function is also used to create d_velocities, if True - will create d_velocitiesN.csv
+    create_d_velocity: this function is also used to create d_velocities, if True - will create d_velocitiesN.csv
 
-#     path_to_get_velocities_from: default path for velocities, to sync rows we need to select rows with a step and drop last one and then save
-#     '''
-#     if coords_path_to_get_movements_from is None:
-#         coord_rows = pd.read_csv("./coords_and_forces/coords" + str(N) + ".csv")[::step]
-#     else:
-#         coord_rows = pd.read_csv(coords_path_to_get_movements_from)[::step]
-#     coord_rows[:-1].to_csv("./coords_and_movements/coords" + str(N) + ".csv", index=False)
+    path_to_get_velocities_from: default path for velocities, to sync rows we need to select rows with a step and drop last one and then save
+    '''
+    coord_rows = pd.read_csv(f'./LJ_modeling_realization/folded_coords{CFG.N}.csv')[::step]
+    coord_rows[:-1].to_csv("./coords_and_movements/coords" + str(N) + ".csv", index=False)
 
-#     if path_to_get_velocities_from is None:
-#         vel_rows = pd.read_csv("./coords_and_forces/velocities" + str(N) + ".csv")[::step]
-#     else:
-#         vel_rows = pd.read_csv(path_to_get_velocities_from)[::step]
-#     vel_rows[:-1].to_csv("./coords_and_movements/velocities" + str(N) + ".csv", index=False)
+    if path_to_get_velocities_from is None:
+        vel_rows = pd.read_csv("./coords_and_forces/velocities" + str(N) + ".csv")[::step]
+    else:
+        vel_rows = pd.read_csv(path_to_get_velocities_from)[::step]
+    vel_rows[:-1].to_csv("./coords_and_movements/velocities" + str(N) + ".csv", index=False)
 
-#     movements = defaultdict(list)
+    movements = defaultdict(list)
 
-#     naming = ["t"]
-#     for i in range(N):
-#         naming.extend([str(i) + "s_x", str(i) + "s_y", str(i) + "s_z"])
+    naming = ["t"]
+    for i in range(N):
+        naming.extend([str(i) + "s_x", str(i) + "s_y", str(i) + "s_z"])
     
-#     for row_numb in range(len(coord_rows) - 1):
-#         cur_coords = coord_rows.iloc[row_numb].to_numpy()
-#         next_coords = coord_rows.iloc[row_numb + 1].to_numpy()
-#         delta = (next_coords - cur_coords)
-#         # Если вычитать vdt:
-#         if minus_vdt:
-#             cur_vels = vel_rows.iloc[row_numb]
-#             delta -= dt * cur_vels
-#         for i in range(len(naming)):
-#             movements[naming[i]].append(delta[i])
+    for row_numb in range(len(coord_rows) - 1):
+        cur_coords = coord_rows.iloc[row_numb].to_numpy()
+        next_coords = coord_rows.iloc[row_numb + 1].to_numpy()
+        delta = (next_coords - cur_coords)
+        # Если вычитать vdt:
+        if minus_vdt:
+            cur_vels = vel_rows.iloc[row_numb]
+            delta -= dt * cur_vels
+        for i in range(len(naming)):
+            movements[naming[i]].append(delta[i])
 
 
-#     if create_d_velocity:
-#         d_velocities = defaultdict(list)
+    if create_d_velocity:
+        d_velocities = defaultdict(list)
 
-#         naming = ["t"]
-#         for i in range(N):
-#             naming.extend([str(i) + "dv_x", str(i) + "dv_y", str(i) + "dv_z"])
+        naming = ["t"]
+        for i in range(N):
+            naming.extend([str(i) + "dv_x", str(i) + "dv_y", str(i) + "dv_z"])
         
-#         for row_numb in range(len(vel_rows) - 1):
-#             cur_coords = vel_rows.iloc[row_numb].to_numpy()
-#             next_coords = vel_rows.iloc[row_numb + 1].to_numpy()
-#             delta = (next_coords - cur_coords)
-#             for i in range(len(naming)):
-#                 d_velocities[naming[i]].append(delta[i])    
+        for row_numb in range(len(vel_rows) - 1):
+            cur_coords = vel_rows.iloc[row_numb].to_numpy()
+            next_coords = vel_rows.iloc[row_numb + 1].to_numpy()
+            delta = (next_coords - cur_coords)
+            for i in range(len(naming)):
+                d_velocities[naming[i]].append(delta[i])    
 
-#         d_velocities = pd.DataFrame(d_velocities)
-#         d_velocities.to_csv("./coords_and_movements/d_velocities" + str(N) + ".csv", index=False)
+        d_velocities = pd.DataFrame(d_velocities)
+        d_velocities.to_csv("./coords_and_movements/d_velocities" + str(N) + ".csv", index=False)
     
-#     movements = pd.DataFrame(movements)
-#     if convert_to_csv:
-#         movements.to_csv("./coords_and_movements/movements" + str(N) + ".csv", index=False)
-#     else:
-#         return movements
+    movements = pd.DataFrame(movements)
+    if convert_to_csv:
+        movements.to_csv("./coords_and_movements/movements" + str(N) + ".csv", index=False)
+    else:
+        return movements
 
 def print_normed(V: np.array) -> None:
     print(
